@@ -7,8 +7,15 @@ then
 fi
 
 cd /tmp
-tar -xvf cmangos-classic-$CMANGOS_VERSION.tar.gz
-cd cmangos/bin
+if [ ! -f "./cmangos/bin/realmd" ]
+then
+  echo "extracting cmangos-classic-$CMANGOS_VERSION.tar.gz"
+  tar -xvf cmangos-classic-$CMANGOS_VERSION.tar.gz
+  cd /tmp/cmangos/bin
+  # TODO So ugly...replace this sleep by a check to make sure the db-filler is over...maybe when it stops pinging.
+  sleep 30
+fi
+cd /tmp/cmangos/bin
 
 /tmp/wait-for-it.sh db:3306
 # TODO So ugly...replace this sleep by a check to make sure the db-filler is over...maybe when it stops pinging.
