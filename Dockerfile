@@ -1,7 +1,3 @@
-FROM maxc0c0s/cmangos-classic-base
+FROM maxc0c0s/cmangos-classic-server
 
-RUN git clone https://github.com/vishnubob/wait-for-it.git
-
-COPY entrypoint.sh /
-
-ENTRYPOINT ["/entrypoint.sh"]
+COPY startup.sh /startup-scripts.d/
