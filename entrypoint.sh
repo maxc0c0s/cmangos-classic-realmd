@@ -2,24 +2,41 @@
 
 if [ -z $CMANGOS_VERSION ]
 then
-  echo 'You need to specify the $CMANGOS_VERSION environment variable, which is the cmangos/mangos-classic version'
-  exit
+  echo 'You need to specify the $CMANGOS_VERSION environment variable, which is the cmangos/mangos-classic version...see https://github.com/cmangos/mangos-classic/releases'
+  exit 1
 fi
 
-cd /tmp
-if [ ! -f "./cmangos/bin/realmd" ]
+REALMD_CONFIG_FILE="/etc/cmangos-classic/realmd.conf"
+TEMP_DIR="/tmp"
+BINARY_PACKAGE="$TEMP_DIR/cmangos-classic-$CMANGOS_VERSION.tar.gz"
+BINARY_DIR="/cmangos/bin"
+
+if [ ! -f "/cmangos/bin/realmd" ]
 then
-  echo "extracting cmangos-classic-$CMANGOS_VERSION.tar.gz"
-  tar -xvf cmangos-classic-$CMANGOS_VERSION.tar.gz
-  cd /tmp/cmangos/bin
-  # TODO So ugly...replace this sleep by a check to make sure the db-filler is over...maybe when it stops pinging.
-  sleep 30
+  if [ ! -e $BINARY_PACKAGE ]; then
+    echo "$BINARY_PACKAGE missing...this file can be generated using https://github.com/maxc0c0s/cmangos-classic-deploy"
+    exit 1
+  fi
+
+  echo "extracting $BINARY_PACKAGE"
+  tar -xf $BINARY_PACKAGE -C /
 fi
-cd /tmp/cmangos/bin
 
-/tmp/wait-for-it.sh db:3306
-# TODO So ugly...replace this sleep by a check to make sure the db-filler is over...maybe when it stops pinging.
-sleep 30
-./realmd -c /etc/cmangos-classic/realmd.conf
+if [ ! -e $REALMD_CONFIG_FILE ]; then
+  echo "$REALMD_CONFIG_FILE must be present...a template for this file can be found here: https://github.com/cmangos/mangos-classic/blob/master/src/realmd/realmd.conf.dist.in"
+  exit 1
+fi
+if [ ! -e $BINARY_DIR/realmd ]; then
+  echo "$BINARY_DIR/realmd must be present...this file comes from $BINARY_PACKAGE"
+  exit 1
+fi
 
-exec $@
+# TODO this command could be called from a custom script
+/wait-for-it/wait-for-it.sh db-master:3306
+
+if [ -z $@ ]; then
+  cd $BINARY_DIR
+  ./realmd -c $REALMD_CONFIG_FILE
+else
+  exec $@
+fi
